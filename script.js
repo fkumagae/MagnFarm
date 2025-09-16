@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Abrir/fechar pelo botão (hamburguer)
   btn.addEventListener('click', () => {
-    const aberto = menu.classList.toggle('is-open');     // alterna classe
+    const aberto = menu.classList.toggle('aberto');     // alterna classe
     btn.setAttribute('aria-expanded', aberto ? 'true' : 'false');
     btn.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
     console.log('[Magalface] Botão menu-toggle clicado. Menu está', aberto ? 'aberto' : 'fechado');
@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Fechar ao clicar num link do menu
   menu.querySelectorAll('a').forEach(a => {
     a.addEventListener('click', () => {
-      if (menu.classList.contains('is-open')) {
-        menu.classList.remove('is-open');
+      if (menu.classList.contains('aberto')) {
+        menu.classList.remove('aberto');
         btn.setAttribute('aria-expanded', 'false');
         btn.setAttribute('aria-label', 'Abrir menu');
       }
@@ -30,8 +30,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fechar com tecla ESC
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && menu.classList.contains('is-open')) {
-      menu.classList.remove('is-open');
+    if (e.key === 'Escape' && menu.classList.contains('aberto')) {
+      menu.classList.remove('aberto');
       btn.setAttribute('aria-expanded', 'false');
       btn.setAttribute('aria-label', 'Abrir menu');
       btn.focus(); // acessibilidade
