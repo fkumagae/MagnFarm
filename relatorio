@@ -1,0 +1,119 @@
+# Relat�rio do projeto Magalface v3
+
+## Vis�o geral do projeto
+
+Este projeto � uma aplica��o web para monitoramento de uma planta��o hidrop�nica (Magalface v3). Ele combina:
+- Frontend em PHP (views em `app/views` e rotas em `public/index.php`/`public/admin.php`).
+- Leitura e exibi��o de dados hidrop�nicos armazenados no banco (tabela `dataReading`, script em `sql/create_dataReading`).
+- Um modelo de IA em Python (autoencoder) exposto via FastAPI em `backend/api/model_routes.py` e implementado em `backend/ml/online_autoencoder.py`.
+- Dashboard com gr�ficos e indicadores na view `app/views/dashboard.php`.
+
+A ideia principal � permitir que o usu�rio acompanhe o estado da solu��o nutritiva (pH, temperatura, EC, etc.), veja alertas de risco e visualize o erro de reconstru��o do autoencoder como um indicador de anomalia.
+
+## Componentes principais
+
+### 1. Backend PHP
+
+- **Views**: arquivos em `app/views/` (por exemplo `dashboard.php`, `home.php`, `projeto.php`, `admin.php`) que renderizam HTML com dados do banco.
+- **Modelos**: classes PHP como `HydroReading`, `HydroAI` e `HydroAutoencoder` fazem a ponte entre o banco de dados e a l�gica de an�lise/IA.
+- **Roteamento**: `public/index.php` e `public/admin.php` atuam como front controllers, despachando para as views corretas.
+- **Estilo**: `public/css/style.css` cont�m os estilos da interface.
+
+### 2. Modelo de IA (Python)
+
+- Arquivo `backend/ml/online_autoencoder.py` define um autoencoder totalmente conectado para dados tabulares, com:
+  - Rede encoder/decoder em PyTorch.
+  - Fun��es de treino inicial (`initial_train`) e treino online (`online_train_step`).
+  - C�lculo de erro de reconstru��o (`reconstruction_error`).
+  - Persist�ncia do modelo em `backend/ml/artifacts/autoencoder.pt` e do buffer em `replay_buffer.pkl`.
+- Arquivo `backend/api/model_routes.py` exp�e endpoints FastAPI:
+  - `POST /api/model/initial-train`: treino inicial com um lote de dados.
+  - `POST /api/model/online-train`: treino incremental com novas leituras.
+  - `POST /api/model/reconstruction-error`: recebe leituras e devolve o vetor de erros de reconstru��o.
+
+### 3. Integra��o PHP ? Python
+
+- A classe `HydroAutoencoder` (`app/models/HydroAutoencoder.php`) monta um array 2D com as leituras hidrop�nicas (pH, temperaturas, umidade, luz, EC) e faz uma requisi��o HTTP para `http://127.0.0.1:8000/api/model/reconstruction-error` usando cURL.
+- A resposta JSON com a lista de erros � convertida em um array PHP, e s�o calculados `min`, `max` e `avg` para exibi��o no dashboard.
+
+### 4. Dashboard e gr�ficos
+
+- A view `app/views/dashboard.php`:
+  - Busca as �ltimas leituras com `HydroReading::latest($points)`.
+  - Prepara arrays de dados (`$chartData`) para pH, temperaturas, umidade, luz, EC e erro de reconstru��o.
+  - Chama `HydroAutoencoder::reconstructionMetrics($chartRows)` para obter erros de reconstru��o alinhados no tempo.
+  - Usa Chart.js no navegador para renderizar tr�s gr�ficos:
+    - pH vs. temperatura da solu��o.
+    - Luz vs. umidade.
+    - Erro de reconstru��o do autoencoder ao longo do tempo.
+  - Para admins, mostra ainda estat�sticas de usu�rios (totais, admins, novos em 7 dias) e uma tabela de usu�rios recentes.
+
+## Dificuldades encontradas
+
+1. **Compatibilidade de dimens�es do modelo**
+   - Foi necess�rio garantir que o `input_dim` do autoencoder corresponde exatamente ao n�mero de features das leituras hidrop�nicas (pH, temperaturas, umidade, luz, EC). Se o modelo � treinado com uma dimensionalidade e depois recebe outra, o `load_state_dict` levanta erro.
+
+2. **Persist�ncia e treino online**
+   - Precisamos implementar um `ReplayBuffer` para manter apenas as amostras mais recentes, evitando crescimento descontrolado na mem�ria.
+   - Ajustar o n�mero de �pocas (`epochs`) e `batch_size` para que o treino online seja leve, mas ainda �til, foi um ponto de aten��o.
+
+3. **Comunica��o PHP ? FastAPI**
+   - T�nhamos que garantir que o servi�o FastAPI est� rodando em `127.0.0.1:8000` e acess�vel pelo PHP (cURL).
+   - Erros de rede ou de formata��o JSON precisaram ser tratados para n�o quebrar o dashboard.
+
+4. **Codifica��o de caracteres e dados**
+   - Alguns textos em portugu�s com acentos aparecem com caracteres estranhos se a codifica��o n�o � tratada corretamente.
+   - Usamos `htmlspecialchars` e `JSON_UNESCAPED_UNICODE` em pontos estrat�gicos para evitar problemas na interface e nos gr�ficos.
+
+5. **Sincroniza��o entre ordem dos dados e erros**
+   - Era importante que os erros de reconstru��o estivessem na mesma ordem cronol�gica que as leituras exibidas no gr�fico e na tabela.
+   - Para isso, ordenamos as leituras e passamos o mesmo array para o modelo Python.
+
+## Erros encontrados e como resolvemos
+
+- **Erro de modelo n�o treinado**
+  - Quando o arquivo `autoencoder.pt` n�o existe, a rota `/api/model/online-train` e `/api/model/reconstruction-error` retornam erro (400), indicando que o modelo ainda n�o foi treinado.
+  - Tratamos isso na camada PHP retornando mensagens amig�veis (status `empty` ou `error`) no dashboard.
+
+- **Erro de compatibilidade de dimens�o**
+  - Ao mudar as features ou o formato dos dados, o `load_model` pode lan�ar um `ValueError` indicando "Dimensao de entrada incompativel�".
+  - A FastAPI converte isso em HTTP 400 com `detail`, e o PHP captura essa mensagem para exibir no dashboard.
+
+- **Erros de rede/cURL**
+  - Se o servi�o FastAPI n�o estiver rodando, o `curl_exec` em `HydroAutoencoder` falha.
+  - Tratamos esse cen�rio retornando `status = 'error'` e uma mensagem explicando que n�o foi poss�vel consultar o servi�o de IA.
+
+## Como testamos
+
+1. **Teste do modelo isolado (Python)**
+   - Utilizamos `tmp_test_online.py` para enviar dados sint�ticos ou reais para as rotas FastAPI (`initial-train`, `online-train`, `reconstruction-error`).
+   - Verificamos se:
+     - O treino inicial cria o arquivo `autoencoder.pt` e o `replay_buffer.pkl` em `backend/ml/artifacts/`.
+     - O treino online atualiza o modelo sem quebrar.
+     - A rota de erro de reconstru��o retorna um vetor de floats com o mesmo tamanho do batch enviado.
+
+2. **Teste da API FastAPI**
+   - Rodamos o servidor com `uvicorn backend.api.model_routes:app --reload`.
+   - Usamos ferramentas como `curl` ou scripts Python para mandar requisi��es JSON �s rotas e inspecionar as respostas.
+
+3. **Teste da integra��o PHP ? Python**
+   - Subimos o XAMPP (Apache + PHP) apontando para o diret�rio `public/`.
+   - Garantimos que o `uvicorn` estava rodando localmente na porta 8000.
+   - Acessamos o dashboard no navegador e verificamos:
+     - Se os erros de reconstru��o s�o carregados sem erro.
+     - Se as mensagens de fallback aparecem quando o modelo n�o est� dispon�vel.
+
+4. **Teste da interface web (dashboard)**
+   - Ajustamos o n�mero de pontos via campo "Quantidade de leituras a exibir" e verificamos se os gr�ficos e a tabela se atualizam corretamente.
+   - Conferimos se os tr�s gr�ficos (pH/temperatura, luz/umidade, erro de reconstru��o) aparecem e respondem �s mudan�as no n�mero de pontos.
+   - Para usu�rios admin, conferimos os cart�es de resumo, o gr�fico de barras de usu�rios por tipo e a tabela de usu�rios recentes.
+
+## Estado final do sistema
+
+- O sistema est� integrado de ponta a ponta:
+  - Leituras hidrop�nicas s�o lidas do banco e exibidas em tabelas e gr�ficos.
+  - O modelo autoencoder em Python � capaz de calcular erros de reconstru��o para as �ltimas leituras.
+  - A dashboard exibe esses erros tanto em forma de resumo (m�nimo, m�dio, m�ximo) quanto em um gr�fico de linha ao longo do tempo.
+- Erros comuns (modelo n�o treinado, problemas de rede, incompatibilidade de dimens�o) s�o tratados e comunicados ao usu�rio de forma clara no dashboard.
+- O projeto est� versionado em Git e as altera��es mais recentes foram commitadas e enviadas para o reposit�rio remoto (`main`).
+
