@@ -17,7 +17,7 @@ class User
     public static function findByEmail(string $email): ?array
     {
         $pdo = db();
-        $sql = 'SELECT id, email, password_hash, name, created_at FROM users WHERE email = :email LIMIT 1';
+        $sql = 'SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = :email LIMIT 1';
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -32,7 +32,7 @@ class User
     public static function findById(int $id): ?array
     {
         $pdo = db();
-        $sql = 'SELECT id, email, password_hash, name, created_at FROM users WHERE id = :id LIMIT 1';
+        $sql = 'SELECT id, email, password_hash, name, role, created_at FROM users WHERE id = :id LIMIT 1';
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':id' => $id]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -64,18 +64,37 @@ class User
         $pdo = db();
 
         try {
-            $sql = 'INSERT INTO users (email, password_hash, name) VALUES (:email, :password_hash, :name)';
+            // Try inserting including role column (newer schema)
+            $sql = 'INSERT INTO users (email, password_hash, name, role) VALUES (:email, :password_hash, :name, :role)';
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':email' => $email,
                 ':password_hash' => $password_hash,
                 ':name' => $name,
+                ':role' => $data['role'] ?? 'user',
             ]);
 
             return (int)$pdo->lastInsertId();
         } catch (PDOException $e) {
-            // Se for duplicate entry (email), retorna false.
-            // Em desenvolvimento podemos inspecionar $e->getMessage().
+            // If the error is caused by missing `role` column (older schema),
+            // fall back to inserting without role. Otherwise, bubble up false.
+            $msg = $e->getMessage();
+            if (stripos($msg, 'unknown column') !== false || stripos($msg, "column 'role'") !== false) {
+                try {
+                    $sql2 = 'INSERT INTO users (email, password_hash, name) VALUES (:email, :password_hash, :name)';
+                    $stmt2 = $pdo->prepare($sql2);
+                    $stmt2->execute([
+                        ':email' => $email,
+                        ':password_hash' => $password_hash,
+                        ':name' => $name,
+                    ]);
+                    return (int)$pdo->lastInsertId();
+                } catch (PDOException $e2) {
+                    return false;
+                }
+            }
+
+            // Other errors (duplicate email, etc.) -> return false
             return false;
         }
     }
@@ -101,8 +120,37 @@ class User
     public static function all(): array
     {
         $pdo = db();
-        $sql = 'SELECT id, email, name, created_at FROM users ORDER BY id DESC';
+        $sql = 'SELECT id, email, name, role, created_at FROM users ORDER BY id DESC';
         $stmt = $pdo->query($sql);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Atualiza o role de um usuário.
+     * @param int $id
+     * @param string $role
+     * @return bool
+     */
+    public static function setRole(int $id, string $role): bool
+    {
+        $allowed = ['user', 'admin'];
+        if (!in_array($role, $allowed, true)) return false;
+        $pdo = db();
+        $sql = 'UPDATE users SET role = :role WHERE id = :id';
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([':role' => $role, ':id' => $id]);
+    }
+
+    /**
+     * Remove usuário do banco.
+     * @param int $id
+     * @return bool
+     */
+    public static function delete(int $id): bool
+    {
+        $pdo = db();
+        $sql = 'DELETE FROM users WHERE id = :id';
+        $stmt = $pdo->prepare($sql);
+        return $stmt->execute([':id' => $id]);
     }
 }

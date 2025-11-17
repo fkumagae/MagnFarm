@@ -187,6 +187,38 @@ header h1 {
   text-decoration: none;         /* não sublinha no hover */
 }
 
+/* Botões que aparecem como links (underline on hover) */
+.nav-like {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font-weight: bold;
+  font-size: 1.1rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+.nav-like:hover {
+  color: #90ee90;
+  text-decoration: underline;
+}
+
+/* Make logout button in header match nav-like (no extra padding/border) */
+.nav-auth-form .nav-like {
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.nav-auth-form .nav-like:hover {
+  color: #90ee90;
+  text-decoration: underline;
+}
+
 
 /* Botão hamburguer: desktop escondido, mobile visível */
 .menu-toggle {
@@ -386,6 +418,24 @@ button[type="submit"]:hover, button[type="submit"]:focus {
 /* Flash messages */
 .flash-messages { max-width: 980px; margin: 1rem auto; padding: 0 1rem; }
 .flash { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight:600 }
+
+/* Strong override: ensure buttons with .nav-like render as simple links
+   and do not inherit the global submit button padding/box-shadow. */
+button.nav-like, .nav-like[type="button"], .nav-like[type="submit"] {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  font: inherit !important;
+  color: inherit !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+button.nav-like:hover, button.nav-like:focus, .nav-like:hover, .nav-like:focus {
+  color: #90ee90 !important;
+  text-decoration: underline !important;
+}
 .flash-success { background: #e6ffed; color: #0b6; border: 1px solid #6bdb9a }
 .flash-error { background: #ffecec; color: #b00; border: 1px solid #f5a6a6 }
 

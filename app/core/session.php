@@ -123,6 +123,7 @@ function login_user(array $user): void
         'id' => $user['id'] ?? null,
         'email' => $user['email'] ?? null,
         'name' => $user['name'] ?? null,
+        'role' => $user['role'] ?? ($user['role'] ?? 'user'),
     ];
     // previne fixation attack
     session_regenerate_id(true);
@@ -195,6 +196,31 @@ function require_auth(string $redirect = 'index.php?action=login'): void
 function current_user(): ?array
 {
     return $_SESSION['user'] ?? null;
+}
+
+/**
+ * Verifica se o usuário atual é admin (role == 'admin').
+ */
+function is_admin(): bool
+{
+    return !empty($_SESSION['user']['role']) && $_SESSION['user']['role'] === 'admin';
+}
+
+/**
+ * Protege páginas que exigem permissão de administrador.
+ * Se não for admin, redireciona para a página passada (padrão: login).
+ */
+function require_admin(string $redirect = 'index.php?action=login'): void
+{
+    if (!is_admin()) {
+        // preserve return_to for after login
+        if (!empty($_SERVER['REQUEST_URI'])) {
+            $_SESSION['return_to'] = $_SERVER['REQUEST_URI'];
+        }
+        flash('error', 'É necessário ter privilégios de administrador para acessar essa página.');
+        header('Location: ' . $redirect);
+        exit;
+    }
 }
 
 ?>

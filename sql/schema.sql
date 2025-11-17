@@ -2,11 +2,11 @@
 -- Cria o banco de dados `magalface` e a tabela `users`.
 -- Importar via phpMyAdmin ou mysql CLI.
 
-CREATE DATABASE IF NOT EXISTS `magalface`
+CREATE DATABASE IF NOT EXISTS `magnfarm`
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE `magalface`;
+USE `magnfarm`;
 
 -- Tabela de usuários mínima
 CREATE TABLE IF NOT EXISTS `users` (
@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` VARCHAR(255) NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
   `name` VARCHAR(100) DEFAULT NULL,
+  `role` VARCHAR(20) NOT NULL DEFAULT 'user',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_email` (`email`)
