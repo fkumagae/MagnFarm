@@ -311,8 +311,32 @@ body {
   line-height: 1.6;
 }
 
+/* Tema claro/escuro baseado em data-theme */
+:root {
+  --bg-body: #f5f7fb;
+  --bg-card: #ffffff;
+  --bg-nav: #171238;
+  --bg-nav-border: #23234a;
+  --text-main: #111111;
+  --border-subtle: #eeeeee;
+}
+
+[data-theme="dark"] {
+  --bg-body: #101322;
+  --bg-card: #171b2d;
+  --bg-nav: #050816;
+  --bg-nav-border: #1f2937;
+  --text-main: #e5e7eb;
+  --border-subtle: #374151;
+}
+
+body {
+  background: var(--bg-body);
+  color: var(--text-main);
+}
+
 header {
-  background: #171238;
+  background: var(--bg-nav);
   color: #fff;
   padding: 1rem;
   position: relative; /* ensure absolute children are positioned relative to header */
@@ -344,7 +368,8 @@ main {
 }
 
 footer {
-  background: #f2f2f2;
+  background: var(--bg-card);
+  color: var(--text-main);
   padding: 1rem;
   text-align: center;
   margin-top: 2rem;
@@ -411,11 +436,16 @@ button[type="submit"]:hover, button[type="submit"]:focus {
   font-size: 1rem;
   background: #e2f5ff;
   margin-bottom: 0.5em;
+  color: #111;
 }
 #form-contato input:focus,
 #form-contato textarea:focus {
   outline: 2px solid #1a1a1a;
   border-color: #1a1a1a;
+}
+
+#form-contato label {
+  color: #111;
 }
 
 /* Flash messages */
@@ -529,6 +559,34 @@ header .nav-auth-form button { white-space: nowrap; }
 }
 .top-right-auth .auth-links a { color: #fff; text-decoration: none; font-weight:600 }
 .top-right-auth .nav-auth-form button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.12); padding: 0.35rem 0.6rem; border-radius:6px; cursor:pointer }
+
+.header-toggles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+}
+
+.header-toggles .lang-toggle a {
+  color: #fff;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.header-toggles .lang-toggle a.is-active {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.theme-toggle {
+  border: 1px solid rgba(255,255,255,0.5);
+  background: transparent;
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
 
 /* ensure nav-fina doesn't include auth controls (we moved them to header) */
 .nav-fina li.nav-auth { display: none; }
@@ -658,7 +716,7 @@ header .nav-auth-form button { white-space: nowrap; }
 
 .dashboard-card {
   flex: 1 1 180px;
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -667,18 +725,18 @@ header .nav-auth-form button { white-space: nowrap; }
 .dashboard-card h3 {
   margin-top: 0;
   font-size: 1rem;
-  color: #333;
+  color: inherit;
 }
 
 .dashboard-kpi {
   font-size: 2rem;
   font-weight: 700;
   margin: 0.25rem 0 0;
-  color: #171238;
+  color: inherit;
 }
 
 .dashboard-chart {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -723,7 +781,7 @@ header .nav-auth-form button { white-space: nowrap; }
 }
 
 .dashboard-table {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 8px;
   padding: 1rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
@@ -742,18 +800,14 @@ header .nav-auth-form button { white-space: nowrap; }
 .dashboard-table th,
 .dashboard-table td {
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-subtle);
   text-align: left;
   font-size: 0.9rem;
 }
 
 .dashboard-table th {
-  background: #f5f7fb;
+  background: rgba(0,0,0,0.03);
   font-weight: 600;
-}
-
-.dashboard-table tr:nth-child(even) td {
-  background: #fafafa;
 }
 
 .dashboard-filter {

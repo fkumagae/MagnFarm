@@ -2,6 +2,7 @@
 // Front controller: serves views from app/views based on ?action=...
 require_once __DIR__ . '/../app/core/session.php';
 require_once __DIR__ . '/../app/core/csrf.php';
+require_once __DIR__ . '/../app/core/i18n.php';
 
 $action = $_GET['action'] ?? 'home';
 
@@ -48,4 +49,3 @@ require_once __DIR__ . '/../app/views/partials/header.php';
 include $viewFile;
 require_once __DIR__ . '/../app/views/partials/footer.php';
 exit;
-

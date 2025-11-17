@@ -46,3 +46,27 @@ FROM (
         (SELECT @row := -1) t0
 ) AS seq
 WHERE seq.minute <= 24*60;
+
+-- Mais 200 leituras simuladas adicionais
+INSERT INTO hydro_readings
+(recorded_at, ph, solution_temp_c, air_temp_c, humidity_percent, light_lux, ec_mScm)
+SELECT
+    NOW() - INTERVAL (24*60 + seq.minute) MINUTE AS recorded_at,
+    6.0 + (RAND() * 0.6 - 0.3)                    AS ph,
+    20.0 + ((24*60 + seq.minute) / 60.0) * 0.15   AS solution_temp_c,
+    22.0 + ((24*60 + seq.minute) / 60.0) * 0.20   AS air_temp_c,
+    65.0 - ((24*60 + seq.minute) / 60.0) * 0.20   AS humidity_percent,
+    8000 + ((24*60 + seq.minute) * 12)            AS light_lux,
+    1.8 + ((24*60 + seq.minute) / 60.0) * 0.01    AS ec_mScm
+FROM (
+    SELECT (@row := @row + 1) * 5 AS minute
+    FROM
+        (SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+         SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t1,
+        (SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+         SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t2,
+        (SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+         SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t3,
+        (SELECT @row := -1) t0
+) AS seq
+WHERE seq.minute <= 200*5;

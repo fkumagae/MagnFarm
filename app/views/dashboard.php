@@ -6,9 +6,10 @@
 require_once __DIR__ . '/../models/User.php';
 require_once __DIR__ . '/../models/HydroReading.php';
 require_once __DIR__ . '/../models/HydroAI.php';
+require_once __DIR__ . '/../models/HydroAutoencoder.php';
 
 // Parte hidroponia (visível para qualquer usuário autenticado)
-$points = isset($_GET['points']) ? (int)$_GET['points'] : 10;
+$points = isset($_GET['points']) ? (int) $_GET['points'] : 10;
 if ($points < 4) {
     $points = 4;
 } elseif ($points > 200) {
@@ -29,15 +30,24 @@ $chartData = [
     'humidity_percent' => [],
     'light_lux' => [],
     'ec_mScm' => [],
+    'recon_error' => [],
 ];
 foreach ($chartRows as $row) {
     $chartData['labels'][] = $row['recorded_at'];
-    $chartData['ph'][] = (float)$row['ph'];
-    $chartData['solution_temp_c'][] = (float)$row['solution_temp_c'];
-    $chartData['air_temp_c'][] = (float)$row['air_temp_c'];
-    $chartData['humidity_percent'][] = (float)$row['humidity_percent'];
-    $chartData['light_lux'][] = (float)$row['light_lux'];
-    $chartData['ec_mScm'][] = (float)$row['ec_mScm'];
+    $chartData['ph'][] = (float) $row['ph'];
+    $chartData['solution_temp_c'][] = (float) $row['solution_temp_c'];
+    $chartData['air_temp_c'][] = (float) $row['air_temp_c'];
+    $chartData['humidity_percent'][] = (float) $row['humidity_percent'];
+    $chartData['light_lux'][] = (float) $row['light_lux'];
+    $chartData['ec_mScm'][] = (float) $row['ec_mScm'];
+}
+
+// calcula erros de reconstrução alinhados com a ordem cronológica de $chartRows
+$autoencoder  = HydroAutoencoder::reconstructionMetrics($chartRows);
+if (isset($autoencoder['status']) && $autoencoder['status'] === 'ok' && !empty($autoencoder['errors']) && is_array($autoencoder['errors'])) {
+    foreach ($autoencoder['errors'] as $err) {
+        $chartData['recon_error'][] = (float) $err;
+    }
 }
 
 // Parte usuários (somente admins)
@@ -102,7 +112,7 @@ if ($isAdmin) {
         name="points"
         min="4"
         max="200"
-        value="<?php echo (int)$points; ?>"
+        value="<?php echo (int) $points; ?>"
       />
       <button type="submit">Atualizar</button>
     </form>
@@ -142,6 +152,10 @@ if ($isAdmin) {
           <figcaption>Luz (lux) e umidade (%)</figcaption>
           <canvas id="chart-light-hum" width="600" height="260"></canvas>
         </figure>
+        <figure class="hydro-chart-figure">
+          <figcaption>Erro de reconstru��ǜo do modelo</figcaption>
+          <canvas id="chart-recon-error" width="600" height="260"></canvas>
+        </figure>
       </div>
     </section>
 
@@ -164,12 +178,12 @@ if ($isAdmin) {
             <?php foreach ($hydroLatest as $row): ?>
               <tr>
                 <td><?php echo htmlspecialchars($row['recorded_at'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></td>
-                <td><?php echo number_format((float)$row['ph'], 2, ',', '.'); ?></td>
-                <td><?php echo number_format((float)$row['solution_temp_c'], 1, ',', '.'); ?></td>
-                <td><?php echo number_format((float)$row['air_temp_c'], 1, ',', '.'); ?></td>
-                <td><?php echo number_format((float)$row['humidity_percent'], 1, ',', '.'); ?></td>
-                <td><?php echo number_format((float)$row['light_lux'], 0, ',', '.'); ?></td>
-                <td><?php echo number_format((float)$row['ec_mScm'], 2, ',', '.'); ?></td>
+                <td><?php echo number_format((float) $row['ph'], 2, ',', '.'); ?></td>
+                <td><?php echo number_format((float) $row['solution_temp_c'], 1, ',', '.'); ?></td>
+                <td><?php echo number_format((float) $row['air_temp_c'], 1, ',', '.'); ?></td>
+                <td><?php echo number_format((float) $row['humidity_percent'], 1, ',', '.'); ?></td>
+                <td><?php echo number_format((float) $row['light_lux'], 0, ',', '.'); ?></td>
+                <td><?php echo number_format((float) $row['ec_mScm'], 2, ',', '.'); ?></td>
               </tr>
             <?php endforeach; ?>
           </tbody>
@@ -178,7 +192,7 @@ if ($isAdmin) {
     </section>
 
     <section class="dashboard-table" aria-label="Insights de IA sobre a plantação">
-      <h3>Insights gerados por IA</h3>
+      <h3>Insights gerados por IA (regras)</h3>
       <p><strong>Nível de risco atual:</strong> <?php echo htmlspecialchars($hydroAI['risk'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></p>
 
       <?php if (!empty($hydroAI['issues'])): ?>
@@ -199,21 +213,45 @@ if ($isAdmin) {
         </ul>
       <?php endif; ?>
     </section>
+
+    <section class="dashboard-table" aria-label="Modelo autoencoder e erros de reconstrução">
+      <h3>Modelo Autoencoder (Python)</h3>
+      <?php if ($autoencoder['status'] === 'ok'): ?>
+        <p>
+          Erros de reconstrução nas <?php echo count($hydroLatest); ?> últimas leituras:
+          mínimo <?php echo number_format((float) $autoencoder['min'], 4, ',', '.'); ?>,
+          médio <?php echo number_format((float) $autoencoder['avg'], 4, ',', '.'); ?>,
+          máximo <?php echo number_format((float) $autoencoder['max'], 4, ',', '.'); ?>.
+        </p>
+        <p>
+          Valores de erro mais altos indicam leituras mais anômalas em relação ao padrão aprendido pelo modelo.
+        </p>
+      <?php elseif ($autoencoder['status'] === 'empty'): ?>
+        <p>Nenhuma leitura disponível para calcular erros de reconstrução.</p>
+      <?php else: ?>
+        <p>
+          Não foi possível consultar o modelo autoencoder no momento.
+          <?php if (!empty($autoencoder['detail'])): ?>
+            Detalhe: <?php echo htmlspecialchars($autoencoder['detail'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?>
+          <?php endif; ?>
+        </p>
+      <?php endif; ?>
+    </section>
   <?php endif; ?>
 
   <?php if ($isAdmin): ?>
     <section class="dashboard-grid" aria-label="Resumo de usuários">
       <article class="dashboard-card">
         <h3>Total de usuários</h3>
-        <p class="dashboard-kpi"><?php echo (int)$totalUsers; ?></p>
+        <p class="dashboard-kpi"><?php echo (int) $totalUsers; ?></p>
       </article>
       <article class="dashboard-card">
         <h3>Admins</h3>
-        <p class="dashboard-kpi"><?php echo (int)$admins; ?></p>
+        <p class="dashboard-kpi"><?php echo (int) $admins; ?></p>
       </article>
       <article class="dashboard-card">
         <h3>Novos nos últimos 7 dias</h3>
-        <p class="dashboard-kpi"><?php echo (int)$recent7; ?></p>
+        <p class="dashboard-kpi"><?php echo (int) $recent7; ?></p>
       </article>
     </section>
 
@@ -223,13 +261,13 @@ if ($isAdmin) {
            aria-label="Gráfico de barras mostrando a quantidade de usuários admins e usuários comuns">
         <div class="dashboard-chart-bar">
           <div class="dashboard-bar dashboard-bar-admin"
-               style="height: <?php echo (float)$adminPercent; ?>%;"></div>
-          <span class="dashboard-bar-label">Admins (<?php echo (int)$admins; ?>)</span>
+               style="height: <?php echo (float) $adminPercent; ?>%;"></div>
+          <span class="dashboard-bar-label">Admins (<?php echo (int) $admins; ?>)</span>
         </div>
         <div class="dashboard-chart-bar">
           <div class="dashboard-bar dashboard-bar-user"
-               style="height: <?php echo (float)$userPercent; ?>%;"></div>
-          <span class="dashboard-bar-label">Usuários (<?php echo (int)$regulars; ?>)</span>
+               style="height: <?php echo (float) $userPercent; ?>%;"></div>
+          <span class="dashboard-bar-label">Usuários (<?php echo (int) $regulars; ?>)</span>
         </div>
       </div>
     </section>
@@ -253,7 +291,7 @@ if ($isAdmin) {
             <tbody>
               <?php foreach ($recentUsers as $u): ?>
                 <tr>
-                  <td><?php echo (int)$u['id']; ?></td>
+                  <td><?php echo (int) $u['id']; ?></td>
                   <td><?php echo htmlspecialchars($u['name'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></td>
                   <td><?php echo htmlspecialchars($u['email'] ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></td>
                   <td><?php echo htmlspecialchars($u['role'] ?? 'user', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); ?></td>
@@ -402,7 +440,45 @@ if ($isAdmin) {
           }
         });
       }
+
+      const reconCanvas = document.getElementById('chart-recon-error');
+      if (reconCanvas && reconCanvas.getContext && Array.isArray(data.recon_error) && data.recon_error.length) {
+        new Chart(reconCanvas.getContext('2d'), {
+          type: 'line',
+          data: {
+            labels: data.labels,
+            datasets: [
+              {
+                label: 'Erro de reconstrução',
+                data: data.recon_error,
+                borderColor: '#e53935',
+                backgroundColor: 'rgba(229, 57, 53, 0.15)',
+                tension: 0.2,
+              }
+            ]
+          },
+          options: {
+            ...commonOptions,
+            scales: {
+              x: {
+                display: true,
+                title: {
+                  display: true,
+                  text: 'Data/hora'
+                }
+              },
+              y: {
+                display: true,
+                position: 'left',
+                title: {
+                  display: true,
+                  text: 'Erro de reconstrução'
+                }
+              }
+            }
+          }
+        });
+      }
     })();
   </script>
 </main>
-

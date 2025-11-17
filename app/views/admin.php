@@ -2,12 +2,42 @@
 // admin view: expects $users (array) and csrf helpers available
 ?>
 <main class="admin-page" role="main" style="max-width:980px;margin:1rem auto;padding:1rem;">
-  <h1>Painel de Administração</h1>
+  <h1>Painel de Administracao</h1>
   <?php if ($m = flash('success')): ?><div class="flash flash-success"><?php echo htmlspecialchars($m); ?></div><?php endif; ?>
   <?php if ($m = flash('error')): ?><div class="flash flash-error"><?php echo htmlspecialchars($m); ?></div><?php endif; ?>
 
   <section style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
-    <h2>Usuários</h2>
+    <h2>Modelo de IA (Autoencoder)</h2>
+    <p style="margin-bottom:0.75rem;">
+      Usa as leituras hidroponicas recentes (pH, temperaturas, umidade, luz, EC) para treinar um
+      autoencoder self-supervised. O modelo pode ser usado depois para detectar anomalias.
+    </p>
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-top:0.5rem;">
+      <form method="post" action="admin.php">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="action" value="train_model">
+        <button type="submit" class="btn-formulario">Treinar modelo com leituras recentes</button>
+      </form>
+      <form method="post" action="admin.php">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="action" value="online_train_model">
+        <button type="submit" class="btn-formulario">Retreinar modelo (online) com leituras recentes</button>
+      </form>
+      <form method="post" action="admin.php">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="action" value="test_model">
+        <button type="submit" class="btn-formulario">Testar modelo com leituras recentes</button>
+      </form>
+      <form method="post" action="admin.php">
+        <?php echo csrf_field(); ?>
+        <input type="hidden" name="action" value="generate_readings">
+        <button type="submit" class="btn-formulario">Gerar mais leituras simuladas</button>
+      </form>
+    </div>
+  </section>
+
+  <section style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.05);">
+    <h2>Usuarios</h2>
     <table style="width:100%;border-collapse:collapse;margin-top:0.5rem;">
       <thead>
         <tr style="text-align:left;border-bottom:1px solid #eee;">
@@ -16,7 +46,7 @@
           <th>Nome</th>
           <th>Role</th>
           <th>Criado em</th>
-          <th>Ações</th>
+          <th>Acoes</th>
         </tr>
       </thead>
       <tbody>
@@ -44,7 +74,7 @@
                 </form>
               <?php endif; ?>
 
-              <form method="post" action="admin.php" style="display:inline;margin-right:.25rem;" onsubmit="return confirm('Confirma remoção deste usuário?');">
+              <form method="post" action="admin.php" style="display:inline;margin-right:.25rem;" onsubmit="return confirm('Confirma remocao deste usuario?');">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="user_id" value="<?php echo (int)$u['id']; ?>">
                 <input type="hidden" name="action" value="delete">
@@ -57,3 +87,4 @@
     </table>
   </section>
 </main>
+
