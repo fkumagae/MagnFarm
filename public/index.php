@@ -17,7 +17,7 @@ $allowed = [
 
 if (!array_key_exists($action, $allowed)) {
 	http_response_code(404);
-	echo "Página não encontrada.";
+	echo "Pǭgina nǜo encontrada.";
 	exit;
 }
 
@@ -48,3 +48,4 @@ require_once __DIR__ . '/../app/views/partials/header.php';
 include $viewFile;
 require_once __DIR__ . '/../app/views/partials/footer.php';
 exit;
+

@@ -13,11 +13,11 @@ if (is_array($res) && isset($res['errors'])) {
 require_once __DIR__ . '/../app/views/partials/header.php';
 ?>
 
-<main class="auth-page">
-    <h1>Entrar</h1>
+<main class="auth-page" role="main" aria-labelledby="login-title">
+    <h1 id="login-title">Entrar</h1>
 
     <?php if (!empty($errors)): ?>
-        <div class="errors" style="color:#b00">
+        <div class="errors" style="color:#b00" role="alert" aria-live="polite">
             <ul>
                 <?php foreach ($errors as $e): ?>
                     <li><?php echo htmlspecialchars($e, ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); ?></li>

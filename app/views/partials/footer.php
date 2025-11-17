@@ -1,7 +1,7 @@
 <?php
 // footer partial
 ?>
-    <footer>
+    <footer role="contentinfo">
       <small>© 2025 Magalface — UNESP Sorocaba</small>
       <section class="contato">
         <h3>Contato e dúvidas</h3>

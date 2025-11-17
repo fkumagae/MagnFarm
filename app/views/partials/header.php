@@ -13,9 +13,10 @@ if ($base === '') { $base = '/'; }
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Magalface</title>
     <link rel="stylesheet" href="<?php echo $base; ?>/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
   <body>
-    <header>
+    <header role="banner">
       <div class="topo-barra">
         <div class="title-area">
           <img src="<?php echo $base; ?>/img/logo_bola.png" alt="Logo Magalface" class="logo-site" style="cursor:pointer" onclick="document.getElementById('form-contato')?.scrollIntoView({behavior: 'smooth'})" />
@@ -62,7 +63,7 @@ if (is_logged_in()) {
 }
 ?>
 
-      <nav class="nav-fina">
+      <nav class="nav-fina" aria-label="Navegação principal">
         <ul id="site-menu">
           <li><a href="<?php echo $base; ?>/index.php?action=projeto">Projeto</a></li>
           <li><a href="<?php echo $base; ?>/index.php?action=planejamento">Planejamento</a></li>

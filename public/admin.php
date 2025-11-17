@@ -54,4 +54,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $users = User::all();
 require_once __DIR__ . '/../app/views/partials/header.php';
 require_once __DIR__ . '/../app/views/admin.php';
-require_once __DIR__ . '/../app/views/partials/footer.php';
+

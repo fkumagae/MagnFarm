@@ -17,7 +17,7 @@ $user = current_user();
 <body>
     <h1>Dashboard</h1>
     <p>Bem-vindo, <?php echo htmlspecialchars($user['name'] ?? $user['email'], ENT_QUOTES|ENT_SUBSTITUTE, 'UTF-8'); ?>.</p>
-    <form method="post" action="logout.php">
+    <form method="post" action="logout.php" aria-label="Sair da sessão atual">
         <?php echo csrf_field(); ?>
         <button type="submit">Sair</button>
     </form>

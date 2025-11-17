@@ -1,7 +1,7 @@
 <?php
 // admin view: expects $users (array) and csrf helpers available
 ?>
-<main class="admin-page" style="max-width:980px;margin:1rem auto;padding:1rem;">
+<main class="admin-page" role="main" style="max-width:980px;margin:1rem auto;padding:1rem;">
   <h1>Painel de Administração</h1>
   <?php if ($m = flash('success')): ?><div class="flash flash-success"><?php echo htmlspecialchars($m); ?></div><?php endif; ?>
   <?php if ($m = flash('error')): ?><div class="flash flash-error"><?php echo htmlspecialchars($m); ?></div><?php endif; ?>

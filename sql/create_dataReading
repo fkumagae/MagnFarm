@@ -1,25 +1,3 @@
--- schema.sql
--- Cria o banco de dados `magnfarm`, a tabela `users` e uma tabela de leituras hidropônicas simuladas.
--- Importar via phpMyAdmin ou mysql CLI.
-
-CREATE DATABASE IF NOT EXISTS `magnfarm`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `magnfarm`;
-
--- Tabela de usuários mínima
-CREATE TABLE IF NOT EXISTS `users` (
-  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `email` VARCHAR(255) NOT NULL,
-  `password_hash` VARCHAR(255) NOT NULL,
-  `name` VARCHAR(100) DEFAULT NULL,
-  `role` VARCHAR(20) NOT NULL DEFAULT 'user',
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `uniq_email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 -- Tabela de leituras simuladas para uma plantação hidropônica
 CREATE TABLE IF NOT EXISTS `hydro_readings` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -45,8 +23,26 @@ INSERT INTO `hydro_readings`
   (NOW() - INTERVAL 4 HOUR,  6.30, 23.0, 24.5, 58.0, 21000, 2.05),
   (NOW() - INTERVAL 2 HOUR,  6.40, 23.5, 25.0, 57.0, 19000, 2.10),
   (NOW() - INTERVAL 1 HOUR,  6.10, 23.0, 24.0, 59.0, 17000, 2.00);
-
--- Observações:
--- - Use phpMyAdmin (Import) ou o cliente mysql para executar este arquivo.
--- - Não insira senhas em texto plano. A aplicação usará password_hash()/password_verify().
-
+  
+INSERT INTO hydro_readings
+(recorded_at, ph, solution_temp_c, air_temp_c, humidity_percent, light_lux, ec_mScm)
+SELECT
+    NOW() - INTERVAL seq.minute MINUTE AS recorded_at,
+    6.0 + (RAND() * 0.6 - 0.3)                    AS ph,
+    20.0 + (seq.minute / 60.0) * 0.15             AS solution_temp_c,
+    22.0 + (seq.minute / 60.0) * 0.20             AS air_temp_c,
+    65.0 - (seq.minute / 60.0) * 0.20             AS humidity_percent,
+    8000 + (seq.minute * 12)                      AS light_lux,
+    1.8 + (seq.minute / 60.0) * 0.01              AS ec_mScm
+FROM (
+    SELECT (@row := @row + 1) * 5 AS minute
+    FROM
+        (SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+         SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t1,
+        (SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+         SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t2,
+        (SELECT 0 UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION
+         SELECT 5 UNION SELECT 6 UNION SELECT 7 UNION SELECT 8 UNION SELECT 9) t3,
+        (SELECT @row := -1) t0
+) AS seq
+WHERE seq.minute <= 24*60;
