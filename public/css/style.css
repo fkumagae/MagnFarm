@@ -1,11 +1,12 @@
-/* ...existing code... */
+/* Copiado de style.css original — mantenha este arquivo em public/css/ */
 .logo-site {
   height: 55px;      /* ajuste conforme o tamanho desejado */
   margin-right: 1rem;
-  float: right;
+  /* não use mais float com o header flexbox */
+  float: none;
   vertical-align: middle;
   position: relative;
-  z-index: 10000;
+  z-index: 10; /* reduzido para não sobrepor elementos do nav */
   transition: transform 0.25s cubic-bezier(.4,1.4,.6,1); /* animação suave */
 }
 
@@ -150,7 +151,7 @@ header {
 
 header h1 {
   margin: 0;
-  font-size: 2Fis2rem;
+  font-size: 2.1rem;
   letter-spacing: 1px;
 }
 /* Barra de navegação */
@@ -279,6 +280,8 @@ header {
   background: #171238;
   color: #fff;
   padding: 1rem;
+  position: relative; /* ensure absolute children are positioned relative to header */
+  padding-right: 6rem; /* reserve space for logout button at extreme right */
 }
 
 header h1 {
@@ -379,3 +382,185 @@ button[type="submit"]:hover, button[type="submit"]:focus {
   outline: 2px solid #1a1a1a;
   border-color: #1a1a1a;
 }
+
+/* Flash messages */
+.flash-messages { max-width: 980px; margin: 1rem auto; padding: 0 1rem; }
+.flash { padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; font-weight:600 }
+.flash-success { background: #e6ffed; color: #0b6; border: 1px solid #6bdb9a }
+.flash-error { background: #ffecec; color: #b00; border: 1px solid #f5a6a6 }
+
+.auth-bar { background: rgba(0,0,0,0.03); padding: 0.5rem 1rem; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.auth-bar a, .auth-bar span { color: #111; margin-right: 0.5rem }
+
+/* ensure auth-bar sits visually on top of the page and doesn't push nav down */
+.auth-bar {
+  position: relative; /* kept in flow but can be adjusted */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2500;
+}
+
+/* Header layout: title area (logo + title + name) and top-right auth area */
+.topo-barra {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1rem;
+  position: relative; /* permite posicionar .top-right-auth absolute */
+  min-height: 64px; /* garante espaço para centralizar o botão verticalmente */
+  padding-right: 5.5rem; /* espaço para o botão à direita sem sobreposição do conteúdo */
+}
+.title-area {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 0 1 auto; /* ocupa só o necessário, permitindo auth à direita */
+  min-width: 0; /* permite truncamento interno sem quebrar layout */
+}
+.title-and-name { display: flex; flex-direction: column; }
+.title-and-name h1 { margin: 0; font-size: 1.8rem; }
+
+/* site title link styled to look like plain title (no underline, keep white) */
+.site-title {
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-block;
+  transition: transform 160ms cubic-bezier(.2,.9,.3,1), color 120ms ease;
+}
+.site-title:hover, .site-title:focus {
+  /* slightly larger pop on hover/focus */
+  transform: translateY(-3px) scale(1.06);
+  color: #fff;
+  outline: none;
+}
+.site-title:link, .site-title:visited, .site-title:active {
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+/* Ensure all link states (including focus/active) remain white and un-underlined */
+.site-title:hover,
+.site-title:focus,
+.site-title:active,
+.site-title:visited,
+.site-title:link,
+.site-title:focus-visible {
+  color: #fff !important;
+  text-decoration: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.user-name {
+  color: #fff;
+  font-size: 0.95rem;
+  opacity: 0.9;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top-right-auth { display: flex; align-items: center; gap: 0.75rem; margin-left: 0; flex: 0 0 auto; /* keep in-flow; logout will be positioned relative to header */ }
+
+/* force the logout form/button to the extreme right of the header */
+header .nav-auth-form { position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); z-index: 4000; }
+header .nav-auth-form button { white-space: nowrap; }
+
+/* Mobile: move auth controls next to hamburger to avoid overlap */
+@media (max-width: 600px) {
+  .top-right-auth { position: static; transform: none; margin-left: auto; }
+  .topo-barra { padding-right: 0; min-height: auto; }
+  /* mobile: move logout back into flow so it doesn't overlap the hamburger */
+  header .nav-auth-form { position: static; transform: none; right: auto; }
+}
+.top-right-auth .auth-links a { color: #fff; text-decoration: none; font-weight:600 }
+.top-right-auth .nav-auth-form button { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.12); padding: 0.35rem 0.6rem; border-radius:6px; cursor:pointer }
+
+/* ensure nav-fina doesn't include auth controls (we moved them to header) */
+.nav-fina li.nav-auth { display: none; }
+
+/* Garantir que o nome do usuário na nav seja visível e legível */
+.nav-fina li.nav-auth {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.nav-auth-user {
+  color: #fff; /* força branco sobre fundo escuro */
+  font-weight: 600;
+  white-space: nowrap; /* não quebra o nome */
+}
+.nav-auth-form button {
+  /* pequenas melhorias no botão Sair dentro do nav */
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.nav-auth-form button:hover {
+  background: #90ee90;
+  color: #171238;
+  border-color: transparent;
+}
+
+/* auth-form: style only authentication forms (login/register) */
+.auth-form {
+  max-width: 420px;
+  margin: 1.5rem auto;
+  padding: 1rem;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+.auth-form input[type="email"],
+.auth-form input[type="password"],
+.auth-form input[type="text"],
+.auth-form textarea {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+.auth-form button {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  margin-top: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Center auth forms (login/register) both horizontally and vertically on larger screens.
+   We use a dedicated .auth-page class on the <main> element to avoid affecting other pages. */
+.auth-page {
+  display: flex;
+  flex-direction: column;    /* stack h1 + form vertically */
+  align-items: center;       /* horizontal centering of column */
+  justify-content: center;   /* vertical centering of the column */
+  width: 100%;
+  min-height: calc(100vh - 8rem); /* leave space for header/footer (approx) */
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+.auth-page .auth-form {
+  margin: 0 auto;            /* center horizontally if needed */
+  width: 100%;
+  max-width: 480px;          /* slightly larger allowable width */
+}
+
+/* Mobile: don't vertically center (users expect content to start near top) */
+@media (max-width: 600px) {
+  .auth-page {
+    align-items: flex-start;
+    min-height: auto;
+    padding-top: 2rem;
+  }
+}
+
+
