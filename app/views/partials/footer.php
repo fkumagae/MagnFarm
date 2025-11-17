@@ -6,7 +6,7 @@
       <section class="contato">
         <h3>Contato e dúvidas</h3>
         <div class="form-retangulo">
-          <form id="form-contato" method="post" action="contact.php" autocomplete="on">
+          <form id="form-contato" method="post" action="<?php echo $base; ?>/contact.php" autocomplete="on">
             <?php echo csrf_field(); ?>
             <label for="nome">Nome:</label>
             <input type="text" id="nome" name="nome" required>
@@ -24,6 +24,6 @@
         </div>
       </section>
     </footer>
-    <script src="js/script.js"></script>
+    <script src="<?php echo $base; ?>/js/script.js"></script>
   </body>
 </html>
