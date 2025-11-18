@@ -165,6 +165,29 @@ def reconstruction_error(model: nn.Module, X: np.ndarray) -> np.ndarray:
     return mse_per_sample.cpu().numpy()
 
 
+def reconstruction_error_with_per_variable(
+    model: nn.Module, X: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
+    """
+    Versão estendida do erro de reconstrução.
+
+    Retorna:
+    - mse_per_sample: erro médio por amostra [N]
+    - mse_per_var: erro quadrático por amostra e por variável [N, input_dim]
+    """
+    X = np.asarray(X, dtype=np.float32)
+    if X.ndim != 2:
+        raise ValueError("X deve ser array 2D [N, input_dim].")
+
+    model.eval()
+    with torch.no_grad():
+        x_tensor = torch.as_tensor(X, dtype=torch.float32)
+        recon = model(x_tensor)
+        sq_err = (recon - x_tensor) ** 2  # [N, D]
+        mse_per_sample = torch.mean(sq_err, dim=1)  # [N]
+    return mse_per_sample.cpu().numpy(), sq_err.cpu().numpy()
+
+
 # Persistência de modelo e buffer
 ARTIFACT_DIR = Path(__file__).resolve().parent / "artifacts"
 ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)

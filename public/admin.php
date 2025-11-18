@@ -3,6 +3,8 @@ require_once __DIR__ . '/../app/core/session.php';
 require_once __DIR__ . '/../app/core/csrf.php';
 require_once __DIR__ . '/../app/models/User.php';
 require_once __DIR__ . '/../app/models/HydroReading.php';
+require_once __DIR__ . '/../app/models/Comment.php';
+require_once __DIR__ . '/../app/models/Notification.php';
 
 // exige autenticação e privilégios
 require_auth('login.php?action=admin');
@@ -263,6 +265,36 @@ SQL;
             }
         } catch (Throwable $e) {
             flash('error', 'Erro ao gerar leituras simuladas: ' . $e->getMessage());
+        }
+    } elseif ($action === 'add_comment') {
+        $me = current_user();
+        $userId = (int)($me['id'] ?? 0);
+        $itemId = isset($_POST['item_id']) ? (int) $_POST['item_id'] : 0;
+        $content = trim($_POST['content'] ?? '');
+
+        if ($userId <= 0 || $itemId <= 0 || $content === '') {
+            flash('error', 'Preencha o ID do item e o texto do comentário.');
+        } else {
+            if (Comment::create($userId, $itemId, null, $content, 'pending', null, null)) {
+                flash('success', 'Comentário registrado com sucesso.');
+            } else {
+                flash('error', 'Falha ao registrar comentário.');
+            }
+        }
+    } elseif ($action === 'send_notification') {
+        $targetUserId = isset($_POST['notif_user_id']) ? (int) $_POST['notif_user_id'] : 0;
+        $type = trim($_POST['notif_type'] ?? 'info');
+        $message = trim($_POST['notif_message'] ?? '');
+        $priority = trim($_POST['notif_priority'] ?? 'normal');
+
+        if ($targetUserId <= 0 || $message === '') {
+            flash('error', 'Selecione um usuário e informe a mensagem da notificação.');
+        } else {
+            if (Notification::create($targetUserId, $type, $message, $priority)) {
+                flash('success', 'Notificação registrada no banco de dados.');
+            } else {
+                flash('error', 'Falha ao registrar notificação.');
+            }
         }
     }
 

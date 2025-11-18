@@ -31,6 +31,12 @@ $chartData = [
     'light_lux' => [],
     'ec_mScm' => [],
     'recon_error' => [],
+    'recon_error_ph' => [],
+    'recon_error_solution_temp_c' => [],
+    'recon_error_air_temp_c' => [],
+    'recon_error_humidity_percent' => [],
+    'recon_error_light_lux' => [],
+    'recon_error_ec_mScm' => [],
 ];
 foreach ($chartRows as $row) {
     $chartData['labels'][] = $row['recorded_at'];
